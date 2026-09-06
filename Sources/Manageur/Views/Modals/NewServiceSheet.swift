@@ -101,7 +101,7 @@ public struct NewServiceSheet: View {
                     }
                 }
             }
-            .formStyle(.grouped)
+            .inventoryForm()
             .navigationTitle("New Service")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

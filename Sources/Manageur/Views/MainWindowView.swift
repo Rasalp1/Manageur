@@ -9,25 +9,17 @@ public struct MainWindowView: View {
     public var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             SidebarView(viewModel: viewModel)
-                .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 300)
+                .navigationSplitViewColumnWidth(min: 205, ideal: 225, max: 280)
         } content: {
             ServiceListView(viewModel: viewModel)
-                .navigationSplitViewColumnWidth(min: 260, ideal: 300, max: 400)
+                .navigationSplitViewColumnWidth(min: 290, ideal: 340, max: 440)
         } detail: {
             if let selectedId = viewModel.selectedServiceId {
                 ServiceDetailView(viewModel: viewModel, serviceId: selectedId)
             } else {
-                VStack(spacing: 12) {
-                    Image(systemName: "square.stack.3d.up")
-                        .font(.system(size: 48))
-                        .foregroundColor(.secondary.opacity(0.5))
-                    Text("No Service Selected")
-                        .font(.title3.bold())
-                        .foregroundColor(.secondary)
-                    Text("Select a service from the list or add a new one.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-
+                VStack(spacing: 0) {
+                    InventoryEmptyView(icon: "square.stack.3d.up", title: "A place for every service",
+                        message: "Select a service to explore its account, subscription, projects, and privacy details.")
                     Button("Add Service") {
                         viewModel.isShowingNewServiceSheet = true
                     }
@@ -35,8 +27,12 @@ public struct MainWindowView: View {
                     .padding(.top, 8)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Theme.canvas)
             }
         }
+        .navigationSplitViewStyle(.balanced)
+        .navigationTitle("Manageur")
+        .tint(Theme.accent)
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button(action: { viewModel.isShowingNewServiceSheet = true }) {

@@ -130,7 +130,7 @@ public struct OverviewTab: View {
                 }
             }
         }
-        .formStyle(.grouped)
+        .inventoryForm()
     }
 
     private func addTag() {

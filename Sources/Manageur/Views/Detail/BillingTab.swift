@@ -95,6 +95,6 @@ public struct BillingTab: View {
                 }
             }
         }
-        .formStyle(.grouped)
+        .inventoryForm()
     }
 }

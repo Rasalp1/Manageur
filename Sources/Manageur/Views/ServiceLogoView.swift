@@ -18,10 +18,10 @@ public struct ServiceLogoView: View {
     public var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: size * 0.25, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor))
+                .fill(Theme.accent.opacity(0.085))
                 .overlay(
                     RoundedRectangle(cornerRadius: size * 0.25, style: .continuous)
-                        .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                        .stroke(Theme.subtleBorder, lineWidth: 1)
                 )
 
             if let image = loadedImage {
@@ -35,7 +35,7 @@ public struct ServiceLogoView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: size * 0.5, height: size * 0.5)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.accent)
             }
         }
         .frame(width: size, height: size)

@@ -84,6 +84,6 @@ public struct PrivacyTab: View {
                 }
             }
         }
-        .formStyle(.grouped)
+        .inventoryForm()
     }
 }

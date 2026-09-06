@@ -61,15 +61,21 @@ public struct SettingsView: View {
                 }
 
                 Section("About Manageur") {
-                    Text("Manageur is a native macOS service inventory and digital footprint tracker.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text("Version 1.0.0")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                    HStack(spacing: 12) {
+                        ManageurAppIconView(size: 28)
+                            .foregroundStyle(Theme.accent)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Manageur is a native macOS service inventory and digital footprint tracker.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text("Version 1.0.0")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
             }
-            .formStyle(.grouped)
+            .inventoryForm()
             .navigationTitle("Manageur Settings")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

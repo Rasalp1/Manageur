@@ -73,6 +73,6 @@ public struct AuthTab: View {
                 ))
             }
         }
-        .formStyle(.grouped)
+        .inventoryForm()
     }
 }

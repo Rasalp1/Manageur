@@ -79,7 +79,7 @@ public struct ContextTab: View {
                 ))
             }
         }
-        .formStyle(.grouped)
+        .inventoryForm()
     }
 
     private func addProject() {

@@ -18,7 +18,7 @@ public struct ServiceRowView: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(service.name)
-                        .font(.headline)
+                        .font(.system(size: 13, weight: .semibold))
                         .lineLimit(1)
 
                     Circle()
@@ -35,20 +35,12 @@ public struct ServiceRowView: View {
                             .lineLimit(1)
                     }
 
-                    Text("•")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-
-                    Text(service.category.rawValue)
-                        .font(.caption2)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1)
-                        .background(Color.secondary.opacity(0.12))
-                        .cornerRadius(4)
                 }
+                Text(service.category.rawValue)
+                    .font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
             }
 
-            Spacer()
+            Spacer(minLength: 6)
 
             VStack(alignment: .trailing, spacing: 3) {
                 if service.billingInfo.isPaid {
@@ -76,6 +68,8 @@ public struct ServiceRowView: View {
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 10)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(service.status.rawValue)
     }
 }

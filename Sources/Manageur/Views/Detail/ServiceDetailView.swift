@@ -43,22 +43,32 @@ public struct ServiceDetailView: View {
                     // Header Bar
                     headerBar(service: service)
 
-                    Divider()
-
-                    // Tab Selector
-                    Picker("", selection: $selectedTab) {
-                        ForEach(DetailTab.allCases) { tab in
-                            Label(tab.rawValue, systemImage: tab.iconName).tag(tab)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 24) {
+                            ForEach(DetailTab.allCases) { tab in
+                                Button { selectedTab = tab } label: {
+                                    VStack(spacing: 12) {
+                                        Text(tab.rawValue)
+                                            .font(.system(size: 12, weight: selectedTab == tab ? .semibold : .regular))
+                                            .foregroundStyle(selectedTab == tab ? Theme.accent : .secondary)
+                                        Rectangle().fill(selectedTab == tab ? Theme.accent : .clear).frame(height: 2)
+                                    }
+                                    .fixedSize(horizontal: true, vertical: false)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
+                            }
                         }
+                        .padding(.horizontal, Theme.pageInset).padding(.top, 16)
                     }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
+                    .frame(height: 46)
 
                     Divider()
 
                     // Tab Content
                     tabContent(service: service)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                     Divider()
 
@@ -71,6 +81,7 @@ public struct ServiceDetailView: View {
                 }
             }
         }
+        .background(Theme.canvas)
         .onAppear {
             loadDraft()
         }
@@ -108,54 +119,63 @@ public struct ServiceDetailView: View {
 
     @ViewBuilder
     private func headerBar(service: ServiceItem) -> some View {
-        HStack(spacing: 16) {
-            ServiceLogoView(
-                domain: service.cleanedDomain,
-                category: service.category,
-                size: 46
-            )
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    Text(service.name)
-                        .font(.title2.bold())
-                        .lineLimit(1)
-
-                    Text(service.workspace)
-                        .font(.caption)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.accentColor.opacity(0.15))
-                        .foregroundColor(.accentColor)
-                        .cornerRadius(6)
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(spacing: 8) {
+                Label(service.workspace, systemImage: "folder")
+                Image(systemName: "chevron.right").font(.system(size: 8, weight: .semibold))
+                Text(service.category.rawValue).lineLimit(1)
+                Spacer(minLength: 0)
+                Menu {
+                    Button("Reveal in Finder", action: revealInFinder)
+                    Divider()
+                    Button("Delete service…", role: .destructive) { isShowingDeleteConfirmation = true }
+                } label: {
+                    Image(systemName: "ellipsis.circle").font(.system(size: 16))
                 }
-
-                HStack(spacing: 8) {
-                    if !service.cleanedDomain.isEmpty {
-                        Text(service.cleanedDomain)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                .menuStyle(.borderlessButton).fixedSize().help("Service actions")
+                .accessibilityLabel("Service actions")
+            }
+            .font(.system(size: 11)).foregroundStyle(.secondary)
+            HStack(alignment: .top, spacing: 14) {
+                ServiceLogoView(domain: service.cleanedDomain, category: service.category, size: 48)
+                VStack(alignment: .leading, spacing: 7) {
+                    Text(service.name).font(.system(size: 25, weight: .bold))
+                        .lineLimit(2).textSelection(.enabled).help(service.name)
+                    HStack(spacing: 6) {
+                        Circle().fill(service.status.color).frame(width: 6, height: 6)
+                        Text(service.status.rawValue)
+                        if !service.cleanedDomain.isEmpty {
+                            Text("·")
+                            Text(service.cleanedDomain).lineLimit(1)
+                        }
                     }
-
-                    Circle().fill(service.status.color).frame(width: 7, height: 7)
-                    Text(service.status.rawValue)
-                        .font(.caption)
-                        .foregroundColor(service.status.color)
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
                 }
+                Spacer(minLength: 0)
             }
-
-            Spacer()
-
-            Button(role: .destructive, action: { isShowingDeleteConfirmation = true }) {
-                Image(systemName: "trash")
-                    .foregroundColor(.red)
+            HStack(spacing: 10) {
+                if let url = websiteURL(service) {
+                    Link(destination: url) {
+                        Label("Open website", systemImage: "arrow.up.right")
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                Text(service.billingInfo.isPaid ? service.billingInfo.formattedCost : "Free plan")
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+                Spacer(minLength: 0)
             }
-            .buttonStyle(.plain)
-            .help("Delete service record")
+            .controlSize(.regular)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .padding(Theme.pageInset).padding(.bottom, 2)
+    }
+
+    private func websiteURL(_ service: ServiceItem) -> URL? {
+        let address = service.websiteURL.flatMap { $0.isEmpty ? nil : $0 }
+            ?? (service.cleanedDomain.isEmpty ? nil : "https://\(service.cleanedDomain)")
+        guard let address, let url = URL(string: address),
+              let scheme = url.scheme?.lowercased(), ["https", "http"].contains(scheme),
+              url.host != nil else { return nil }
+        return url
     }
 
     // MARK: - Tab Content
@@ -200,8 +220,10 @@ public struct ServiceDetailView: View {
     @ViewBuilder
     private func footerBar(service: ServiceItem) -> some View {
         HStack {
-            Text("File: \(service.workspace)/\(service.slug).json")
-                .font(.caption.monospaced())
+            Label("\(service.slug).json", systemImage: "doc.text")
+                .font(.system(size: 10))
+                .lineLimit(1)
+                .help("\(service.workspace)/\(service.slug).json")
                 .foregroundColor(.secondary)
 
             Spacer()
@@ -212,9 +234,9 @@ public struct ServiceDetailView: View {
             .buttonStyle(.borderless)
             .controlSize(.small)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 6)
-        .background(Color(nsColor: .controlBackgroundColor))
+        .padding(.horizontal, Theme.pageInset)
+        .padding(.vertical, 12)
+        .background(Theme.canvas)
     }
 
     private func revealInFinder() {

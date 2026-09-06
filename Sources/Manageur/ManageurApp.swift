@@ -1,8 +1,20 @@
 import SwiftUI
+import AppKit
 
 @main
 struct ManageurApp: App {
     init() {
+        NSApplication.shared.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        
+        // Restore transparent silhouette for Dock tile
+        let iconUrl = Bundle.main.url(forResource: "AppIcon", withExtension: "png")
+            ?? Bundle.main.resourceURL?.appendingPathComponent("AppIcon.png")
+            ?? Bundle.module.url(forResource: "AppIcon", withExtension: "png")
+        if let iconUrl = iconUrl, let iconImg = NSImage(contentsOf: iconUrl) {
+            NSApplication.shared.applicationIconImage = iconImg
+        }
+        
         seedSampleDataIfEmpty()
     }
 
