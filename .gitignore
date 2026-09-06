@@ -1,0 +1,24 @@
+# Xcode & Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+Package.resolved
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+
+# macOS System Files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon\r
+._*
+.Spotlight-V100
+.Trashes
+
+# Build Artifacts & Caches
+*.o
+*.swiftdoc
+*.swiftmodule
+*.swiftsourceinfo
