@@ -15,6 +15,8 @@ public struct OverviewTab: View {
 
     public var body: some View {
         Form {
+
+            // MARK: Basic Information
             Section("Basic Information") {
                 TextField("Service Name", text: $service.name)
                     .onChange(of: service.name) { _, _ in onSave() }
@@ -59,6 +61,99 @@ public struct OverviewTab: View {
                 .onChange(of: service.status) { _, _ in onSave() }
             }
 
+            // MARK: Usage & Discovery
+            Section("Usage & Discovery") {
+                Picker("Usage Frequency", selection: $service.usageFrequency) {
+                    ForEach(UsageFrequency.allCases) { freq in
+                        Label(freq.rawValue, systemImage: freq.sfSymbol).tag(freq)
+                    }
+                }
+                .onChange(of: service.usageFrequency) { _, _ in onSave() }
+
+                Picker("Signup Source", selection: $service.signupSource) {
+                    ForEach(SignupSource.allCases) { source in
+                        Label(source.rawValue, systemImage: source.sfSymbol).tag(source)
+                    }
+                }
+                .onChange(of: service.signupSource) { _, _ in onSave() }
+
+                // Signup date
+                Toggle("Record Signup Date", isOn: Binding(
+                    get: { service.signupDate != nil },
+                    set: { enabled in
+                        service.signupDate = enabled ? Date() : nil
+                        onSave()
+                    }
+                ))
+
+                if let signupDate = service.signupDate {
+                    DatePicker("Signup Date", selection: Binding(
+                        get: { signupDate },
+                        set: { service.signupDate = $0; onSave() }
+                    ), displayedComponents: [.date])
+                }
+            }
+
+            // MARK: Platforms
+            Section("Platforms") {
+                if service.appPlatforms.isEmpty {
+                    Text("No platforms selected — tap to add")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12))
+                }
+
+                FlowLayout(spacing: 6) {
+                    ForEach(AppPlatform.allCases) { platform in
+                        let isSelected = service.appPlatforms.contains(platform)
+                        Button {
+                            if isSelected {
+                                service.appPlatforms.removeAll { $0 == platform }
+                            } else {
+                                service.appPlatforms.append(platform)
+                            }
+                            onSave()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: platform.sfSymbol)
+                                    .font(.system(size: 10))
+                                Text(platform.rawValue)
+                                    .font(.system(size: 11))
+                            }
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 5)
+                            .background(
+                                isSelected ? Theme.accent.opacity(0.18) : Color.secondary.opacity(0.08),
+                                in: RoundedRectangle(cornerRadius: 8)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(isSelected ? Theme.accent.opacity(0.5) : Color.clear, lineWidth: 1)
+                            )
+                            .foregroundStyle(isSelected ? Theme.accent : .secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+
+            // MARK: Licence Key Hint (only for one-time purchases)
+            if service.billingInfo.billingCycle == .oneTime || !service.category.isBillingRelevant {
+                Section("Licence Reference") {
+                    TextField("Licence key hint (e.g. 'See 1Password › Setapp')", text: Binding(
+                        get: { service.licenceKeyHint ?? "" },
+                        set: { service.licenceKeyHint = $0.isEmpty ? nil : $0; onSave() }
+                    ))
+
+                    if service.licenceKeyHint != nil {
+                        Label("Store the actual key in a password manager, not here.", systemImage: "info.circle")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            // MARK: Tags
             Section("Tags") {
                 HStack {
                     TextField("Add tag...", text: $newTag)
@@ -89,6 +184,7 @@ public struct OverviewTab: View {
                 }
             }
 
+            // MARK: Notes
             Section("Notes & Description") {
                 TextEditor(text: Binding(
                     get: { service.notes ?? "" },
@@ -98,8 +194,9 @@ public struct OverviewTab: View {
                 .frame(minHeight: 80)
             }
 
+            // MARK: Metadata
             Section("Record Auditing & Metadata") {
-                LabeledContent("Date Created") {
+                LabeledContent("Date Added to Manageur") {
                     Text(service.dateCreated.formatted(date: .abbreviated, time: .shortened))
                         .foregroundColor(.secondary)
                 }
@@ -149,7 +246,7 @@ public struct OverviewTab: View {
     }
 }
 
-// Simple Flow layout for tags
+// Simple Flow layout for tags and platform chips
 struct FlowLayout: Layout {
     var spacing: CGFloat = 8
 

@@ -14,28 +14,30 @@ public struct SidebarView: View {
                     .foregroundStyle(Theme.accent)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Manageur").font(.system(size: 16, weight: .semibold))
-                    Text("Your service library").font(.system(size: 11)).foregroundStyle(.secondary)
+                    Text("Your digital footprint").font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer()
             }
             .padding(.horizontal, 20).padding(.top, 24).padding(.bottom, 26)
+
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
+
+                    // MARK: Library
                     VStack(spacing: 3) {
                         sectionTitle("Library")
                         row("All services", icon: "square.grid.2x2", count: viewModel.services.count,
-                            selected: viewModel.selectedWorkspace == nil && viewModel.selectedAuditFilter == nil && viewModel.selectedCategory == nil && viewModel.selectedStatus == nil) {
-                            viewModel.selectedWorkspace = nil
-                            viewModel.selectedAuditFilter = nil
-                            viewModel.selectedCategory = nil
-                            viewModel.selectedStatus = nil
-                            viewModel.searchQuery = ""
+                            selected: isAllSelected) {
+                            clearAllFilters()
                         }
                     }
+
+                    // MARK: Workspaces
                     VStack(spacing: 3) {
                         sectionTitle("Workspaces")
                         ForEach(viewModel.availableWorkspaces, id: \.self) { workspace in
-                            row(workspace, icon: "folder", count: viewModel.services.filter { $0.workspace.caseInsensitiveCompare(workspace) == .orderedSame }.count,
+                            row(workspace, icon: "folder",
+                                count: viewModel.services.filter { $0.workspace.caseInsensitiveCompare(workspace) == .orderedSame }.count,
                                 selected: viewModel.selectedWorkspace == workspace) {
                                 viewModel.selectedWorkspace = viewModel.selectedWorkspace == workspace ? nil : workspace
                                 viewModel.selectedAuditFilter = nil
@@ -51,31 +53,56 @@ public struct SidebarView: View {
                         }
                         .buttonStyle(.plain).foregroundStyle(.secondary)
                     }
+
+                    // MARK: Audit & Health
                     VStack(spacing: 3) {
                         sectionTitle("Audit & health")
-                        auditRow("Expiring trials", icon: "clock", filter: "expiring-trials", category: "Trial")
-                        auditRow("Missing 2FA", icon: "shield.slash", filter: "missing-2fa", category: "Security")
-                        auditRow("Account deletion", icon: "hand.raised", filter: "missing-gdpr", category: "Privacy")
-                        auditRow("Category overlaps", icon: "square.on.square", filter: "duplicates", category: "Duplicate")
+                        auditRow("Expiring trials",    icon: "clock",             filter: "expiring-trials",    category: "Trial")
+                        auditRow("Missing 2FA",        icon: "shield.slash",      filter: "missing-2fa",        category: "Security")
+                        auditRow("Account deletion",   icon: "hand.raised",       filter: "missing-gdpr",       category: "Privacy")
+                        auditRow("Dormant accounts",   icon: "moon.zzz",          filter: "dormant",            category: "Dormant")
+                        auditRow("Unreviewed signups", icon: "person.badge.clock", filter: "unreviewed-signups", category: "Unreviewed")
+                        auditRow("Category overlaps",  icon: "square.on.square",  filter: "duplicates",         category: "Duplicate")
                     }
+
+                    // MARK: Categories
                     VStack(spacing: 3) {
                         sectionTitle("Categories")
                         ForEach(ServiceCategory.allCases) { category in
                             let count = viewModel.services.filter { $0.category == category }.count
                             if count > 0 || viewModel.selectedCategory == category {
-                                row(category.rawValue, icon: category.sfSymbol, count: count, selected: viewModel.selectedCategory == category) {
+                                row(category.rawValue, icon: category.sfSymbol, count: count,
+                                    selected: viewModel.selectedCategory == category) {
                                     viewModel.selectedCategory = viewModel.selectedCategory == category ? nil : category
                                     viewModel.selectedAuditFilter = nil
                                 }
                             }
                         }
                     }
+
+                    // MARK: Platforms
+                    VStack(spacing: 3) {
+                        sectionTitle("Platforms")
+                        ForEach(AppPlatform.allCases) { platform in
+                            let count = viewModel.services.filter { $0.appPlatforms.contains(platform) }.count
+                            if count > 0 || viewModel.selectedPlatform == platform {
+                                row(platform.rawValue, icon: platform.sfSymbol, count: count,
+                                    selected: viewModel.selectedPlatform == platform) {
+                                    viewModel.selectedPlatform = viewModel.selectedPlatform == platform ? nil : platform
+                                    viewModel.selectedAuditFilter = nil
+                                }
+                            }
+                        }
+                    }
+
+                    // MARK: Status
                     VStack(spacing: 3) {
                         sectionTitle("Status")
                         ForEach(ServiceStatus.allCases) { status in
                             let count = viewModel.services.filter { $0.status == status }.count
                             if count > 0 || viewModel.selectedStatus == status {
-                                row(status.rawValue, icon: "circle", count: count, selected: viewModel.selectedStatus == status) {
+                                row(status.rawValue, icon: status.iconName, count: count,
+                                    selected: viewModel.selectedStatus == status) {
                                     viewModel.selectedStatus = viewModel.selectedStatus == status ? nil : status
                                     viewModel.selectedAuditFilter = nil
                                 }
@@ -85,12 +112,14 @@ public struct SidebarView: View {
                 }
                 .padding(.horizontal, 12).padding(.bottom, 20)
             }
+
             Divider().padding(.horizontal, 20)
+
             HStack(spacing: 8) {
                 Image(systemName: "internaldrive").foregroundStyle(.secondary)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("On this Mac").font(.system(size: 11, weight: .medium))
-                    Text("\(viewModel.services.filter { $0.status == .active }.count) active services")
+                    Text("\(viewModel.totalTrackedCount) tracked entries")
                         .font(.system(size: 10)).foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -107,6 +136,27 @@ public struct SidebarView: View {
             Button("Create") { viewModel.addWorkspace(newWorkspaceName) }
                 .disabled(newWorkspaceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         } message: { Text("Give this collection of services a name.") }
+    }
+
+    // MARK: - Helpers
+
+    private var isAllSelected: Bool {
+        viewModel.selectedWorkspace == nil &&
+        viewModel.selectedAuditFilter == nil &&
+        viewModel.selectedCategory == nil &&
+        viewModel.selectedStatus == nil &&
+        viewModel.selectedPlatform == nil &&
+        viewModel.selectedUsageFrequency == nil
+    }
+
+    private func clearAllFilters() {
+        viewModel.selectedWorkspace = nil
+        viewModel.selectedAuditFilter = nil
+        viewModel.selectedCategory = nil
+        viewModel.selectedStatus = nil
+        viewModel.selectedPlatform = nil
+        viewModel.selectedUsageFrequency = nil
+        viewModel.searchQuery = ""
     }
 
     private func sectionTitle(_ title: String) -> some View {
@@ -139,6 +189,8 @@ public struct SidebarView: View {
             viewModel.selectedWorkspace = nil
             viewModel.selectedCategory = nil
             viewModel.selectedStatus = nil
+            viewModel.selectedPlatform = nil
+            viewModel.selectedUsageFrequency = nil
         }
     }
 }

@@ -1,52 +1,52 @@
 import Foundation
 
 public enum AuthProvider: String, Codable, CaseIterable, Identifiable, Sendable {
-    case google = "Google"
-    case github = "GitHub"
-    case apple = "Apple ID"
+    case google       = "Google"
+    case github       = "GitHub"
+    case apple        = "Apple ID"
     case emailPassword = "Email & Password"
-    case microsoft = "Microsoft"
-    case gitlab = "GitLab"
-    case discord = "Discord"
-    case sso = "SSO / SAML"
-    case passkey = "Passkey"
-    case other = "Other"
+    case microsoft    = "Microsoft"
+    case gitlab       = "GitLab"
+    case discord      = "Discord"
+    case sso          = "SSO / SAML"
+    case passkey      = "Passkey"
+    case other        = "Other"
 
     public var id: String { rawValue }
 
     public var iconName: String {
         switch self {
-        case .google: return "g.circle.fill"
-        case .github: return "chevron.left.forwardslash.chevron.right"
-        case .apple: return "apple.logo"
+        case .google:        return "g.circle.fill"
+        case .github:        return "chevron.left.forwardslash.chevron.right"
+        case .apple:         return "apple.logo"
         case .emailPassword: return "envelope.badge.shield.half.filled"
-        case .microsoft: return "window.vertical.closed"
-        case .gitlab: return "shippingbox.fill"
-        case .discord: return "bubble.left.and.bubble.right.fill"
-        case .sso: return "lock.shield.fill"
-        case .passkey: return "person.badge.key.fill"
-        case .other: return "ellipsis.circle.fill"
+        case .microsoft:     return "window.vertical.closed"
+        case .gitlab:        return "shippingbox.fill"
+        case .discord:       return "bubble.left.and.bubble.right.fill"
+        case .sso:           return "lock.shield.fill"
+        case .passkey:       return "person.badge.key.fill"
+        case .other:         return "ellipsis.circle.fill"
         }
     }
 }
 
 public enum TwoFactorMethod: String, Codable, CaseIterable, Identifiable, Sendable {
-    case none = "None"
+    case none             = "None"
     case authenticatorApp = "Authenticator App (TOTP)"
-    case securityKey = "Hardware Key (YubiKey / FIDO2)"
-    case passkey = "Passkey"
-    case sms = "SMS Verification"
-    case email = "Email Code"
+    case securityKey      = "Hardware Key (YubiKey / FIDO2)"
+    case passkey          = "Passkey"
+    case sms              = "SMS Verification"
+    case email            = "Email Code"
 
     public var id: String { rawValue }
 }
 
 public enum BillingCycle: String, Codable, CaseIterable, Identifiable, Sendable {
-    case free = "Free"
-    case monthly = "Monthly"
-    case annual = "Annual"
+    case free       = "Free"
+    case monthly    = "Monthly"
+    case annual     = "Annual"
     case payAsYouGo = "Pay-As-You-Go / Usage"
-    case oneTime = "One-Time Purchase"
+    case oneTime    = "One-Time Purchase"
 
     public var id: String { rawValue }
 }
@@ -112,16 +112,11 @@ public struct BillingInfo: Codable, Hashable, Sendable {
         }
         let formattedNumber = String(format: "%.2f", amount)
         switch billingCycle {
-        case .monthly:
-            return "\(currency) \(formattedNumber)/mo"
-        case .annual:
-            return "\(currency) \(formattedNumber)/yr"
-        case .payAsYouGo:
-            return "\(currency) \(formattedNumber) (usage)"
-        case .oneTime:
-            return "\(currency) \(formattedNumber) (once)"
-        case .free:
-            return "Free"
+        case .monthly:    return "\(currency) \(formattedNumber)/mo"
+        case .annual:     return "\(currency) \(formattedNumber)/yr"
+        case .payAsYouGo: return "\(currency) \(formattedNumber) (usage)"
+        case .oneTime:    return "\(currency) \(formattedNumber) (once)"
+        case .free:       return "Free"
         }
     }
 }
@@ -175,6 +170,26 @@ public struct ServiceItem: Identifiable, Codable, Hashable, Sendable {
     public var dateCreated: Date
     public var lastAudited: Date?
 
+    // MARK: - New expanded fields (all optional / defaulted for backward compatibility)
+
+    /// The date the account was actually created on the service (vs. the Manageur record date).
+    public var signupDate: Date?
+
+    /// How the user originally discovered / signed up for this service.
+    public var signupSource: SignupSource
+
+    /// How frequently the user actively uses this service.
+    public var usageFrequency: UsageFrequency
+
+    /// Platforms on which the service is used (web, macOS, iOS, etc.).
+    public var appPlatforms: [AppPlatform]
+
+    /// A hint/reference to a licence key stored elsewhere (e.g. "See 1Password 'Setapp Licence'").
+    /// Never store the actual key here — use a password manager for that.
+    public var licenceKeyHint: String?
+
+    // MARK: - Nested info structs
+
     public var authInfo: AuthenticationInfo
     public var billingInfo: BillingInfo
     public var contextInfo: ContextInfo
@@ -193,6 +208,11 @@ public struct ServiceItem: Identifiable, Codable, Hashable, Sendable {
         status: ServiceStatus = .active,
         dateCreated: Date = Date(),
         lastAudited: Date? = nil,
+        signupDate: Date? = nil,
+        signupSource: SignupSource = .other,
+        usageFrequency: UsageFrequency = .occasional,
+        appPlatforms: [AppPlatform] = [],
+        licenceKeyHint: String? = nil,
         authInfo: AuthenticationInfo = AuthenticationInfo(),
         billingInfo: BillingInfo = BillingInfo(),
         contextInfo: ContextInfo = ContextInfo(),
@@ -210,11 +230,52 @@ public struct ServiceItem: Identifiable, Codable, Hashable, Sendable {
         self.status = status
         self.dateCreated = dateCreated
         self.lastAudited = lastAudited
+        self.signupDate = signupDate
+        self.signupSource = signupSource
+        self.usageFrequency = usageFrequency
+        self.appPlatforms = appPlatforms
+        self.licenceKeyHint = licenceKeyHint
         self.authInfo = authInfo
         self.billingInfo = billingInfo
         self.contextInfo = contextInfo
         self.privacyInfo = privacyInfo
     }
+
+    // MARK: - Codable with defaults for new fields (backward compatibility)
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, slug, domain, websiteURL, category, workspace, tags, notes, status,
+             dateCreated, lastAudited, signupDate, signupSource, usageFrequency, appPlatforms,
+             licenceKeyHint, authInfo, billingInfo, contextInfo, privacyInfo
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id              = try c.decode(UUID.self, forKey: .id)
+        name            = try c.decode(String.self, forKey: .name)
+        slug            = try c.decode(String.self, forKey: .slug)
+        domain          = try c.decodeIfPresent(String.self, forKey: .domain) ?? ""
+        websiteURL      = try c.decodeIfPresent(String.self, forKey: .websiteURL)
+        category        = try c.decode(ServiceCategory.self, forKey: .category)
+        workspace       = try c.decode(String.self, forKey: .workspace)
+        tags            = try c.decodeIfPresent([String].self, forKey: .tags) ?? []
+        notes           = try c.decodeIfPresent(String.self, forKey: .notes)
+        status          = try c.decode(ServiceStatus.self, forKey: .status)
+        dateCreated     = try c.decode(Date.self, forKey: .dateCreated)
+        lastAudited     = try c.decodeIfPresent(Date.self, forKey: .lastAudited)
+        // New optional fields — safe defaults for old JSON files
+        signupDate      = try c.decodeIfPresent(Date.self, forKey: .signupDate)
+        signupSource    = try c.decodeIfPresent(SignupSource.self, forKey: .signupSource) ?? .other
+        usageFrequency  = try c.decodeIfPresent(UsageFrequency.self, forKey: .usageFrequency) ?? .occasional
+        appPlatforms    = try c.decodeIfPresent([AppPlatform].self, forKey: .appPlatforms) ?? []
+        licenceKeyHint  = try c.decodeIfPresent(String.self, forKey: .licenceKeyHint)
+        authInfo        = try c.decodeIfPresent(AuthenticationInfo.self, forKey: .authInfo) ?? AuthenticationInfo()
+        billingInfo     = try c.decodeIfPresent(BillingInfo.self, forKey: .billingInfo) ?? BillingInfo()
+        contextInfo     = try c.decodeIfPresent(ContextInfo.self, forKey: .contextInfo) ?? ContextInfo()
+        privacyInfo     = try c.decodeIfPresent(PrivacyInfo.self, forKey: .privacyInfo) ?? PrivacyInfo()
+    }
+
+    // MARK: - Helpers
 
     public static func generateSlug(from name: String) -> String {
         let cleaned = name.lowercased()

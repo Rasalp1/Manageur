@@ -19,6 +19,12 @@ public enum DetailTab: String, CaseIterable, Identifiable {
         case .privacy: return "hand.raised.fill"
         }
     }
+
+    /// Whether a given tab is applicable for a service with the specified category.
+    public func isVisible(for category: ServiceCategory) -> Bool {
+        if self == .billing { return category.isBillingRelevant }
+        return true
+    }
 }
 
 public struct ServiceDetailView: View {
@@ -45,7 +51,7 @@ public struct ServiceDetailView: View {
 
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 24) {
-                            ForEach(DetailTab.allCases) { tab in
+                            ForEach(DetailTab.allCases.filter { $0.isVisible(for: service.category) }) { tab in
                                 Button { selectedTab = tab } label: {
                                     VStack(spacing: 12) {
                                         Text(tab.rawValue)
@@ -63,6 +69,12 @@ public struct ServiceDetailView: View {
                         .padding(.horizontal, Theme.pageInset).padding(.top, 16)
                     }
                     .frame(height: 46)
+                    .onChange(of: service.category) { _, newCategory in
+                        // If the current tab is no longer visible, fall back to overview
+                        if !selectedTab.isVisible(for: newCategory) {
+                            selectedTab = .overview
+                        }
+                    }
 
                     Divider()
 
@@ -160,8 +172,15 @@ public struct ServiceDetailView: View {
                     }
                     .buttonStyle(.borderedProminent)
                 }
-                Text(service.billingInfo.isPaid ? service.billingInfo.formattedCost : "Free plan")
-                    .font(.system(size: 11)).foregroundStyle(.secondary)
+                // Only show billing pill for billing-relevant categories
+                if service.category.isBillingRelevant {
+                    Text(service.billingInfo.isPaid ? service.billingInfo.formattedCost : "Free plan")
+                        .font(.system(size: 11)).foregroundStyle(.secondary)
+                }
+                // Show usage frequency pill for all entries
+                Label(service.usageFrequency.rawValue, systemImage: service.usageFrequency.sfSymbol)
+                    .font(.system(size: 11))
+                    .foregroundStyle(service.usageFrequency.color.opacity(0.9))
                 Spacer(minLength: 0)
             }
             .controlSize(.regular)

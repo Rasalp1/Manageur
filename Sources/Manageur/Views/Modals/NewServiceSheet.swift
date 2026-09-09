@@ -11,6 +11,13 @@ public struct NewServiceSheet: View {
     @State private var category: ServiceCategory = .devTools
     @State private var status: ServiceStatus = .active
 
+    // Usage & Discovery
+    @State private var usageFrequency: UsageFrequency = .occasional
+    @State private var signupSource: SignupSource = .other
+    @State private var signupDate: Date = Date()
+    @State private var hasSignupDate: Bool = false
+    @State private var selectedPlatforms: [AppPlatform] = []
+
     // Auth
     @State private var authProvider: AuthProvider = .emailPassword
     @State private var loginEmail: String = ""
@@ -30,12 +37,13 @@ public struct NewServiceSheet: View {
     public var body: some View {
         NavigationStack {
             Form {
+                // MARK: General
                 Section("General") {
-                    TextField("Service Name (e.g. Stripe, AWS, Figma)", text: $name)
+                    TextField("Name (e.g. Figma, Homebrew, Netflix)", text: $name)
 
-                    TextField("Domain (e.g. stripe.com, figma.com)", text: $domain)
+                    TextField("Domain (e.g. figma.com)", text: $domain)
 
-                    TextField("Website URL (optional)", text: $websiteURL)
+                    TextField("Website or App URL (optional)", text: $websiteURL)
 
                     Picker("Workspace", selection: $workspace) {
                         ForEach(viewModel.availableWorkspaces, id: \.self) { ws in
@@ -59,6 +67,48 @@ public struct NewServiceSheet: View {
                     }
                 }
 
+                // MARK: Usage & Discovery
+                Section("Usage & Discovery") {
+                    Picker("Usage Frequency", selection: $usageFrequency) {
+                        ForEach(UsageFrequency.allCases) { freq in
+                            Label(freq.rawValue, systemImage: freq.sfSymbol).tag(freq)
+                        }
+                    }
+
+                    Picker("How I Found It", selection: $signupSource) {
+                        ForEach(SignupSource.allCases) { source in
+                            Label(source.rawValue, systemImage: source.sfSymbol).tag(source)
+                        }
+                    }
+
+                    Toggle("Record Signup Date", isOn: $hasSignupDate)
+
+                    if hasSignupDate {
+                        DatePicker("Signup Date", selection: $signupDate, displayedComponents: [.date])
+                    }
+                }
+
+                // MARK: Platforms
+                Section("Platforms") {
+                    FlowLayout(spacing: 6) {
+                        ForEach(AppPlatform.allCases) { platform in
+                            let isSelected = selectedPlatforms.contains(platform)
+                            Button {
+                                if isSelected {
+                                    selectedPlatforms.removeAll { $0 == platform }
+                                } else {
+                                    selectedPlatforms.append(platform)
+                                }
+                            } label: {
+                                PlatformChipLabel(platform: platform, isSelected: isSelected)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+
+                // MARK: Authentication
                 Section("Authentication") {
                     Picker("Auth Provider", selection: $authProvider) {
                         ForEach(AuthProvider.allCases) { prov in
@@ -75,26 +125,29 @@ public struct NewServiceSheet: View {
                     }
                 }
 
-                Section("Billing") {
-                    Toggle("Paid Subscription", isOn: $isPaid)
+                // MARK: Billing (only for billing-relevant categories)
+                if category.isBillingRelevant {
+                    Section("Billing") {
+                        Toggle("Paid Subscription", isOn: $isPaid)
 
-                    if isPaid {
-                        TextField("Tier (e.g. Pro, Team)", text: $tierName)
+                        if isPaid {
+                            TextField("Tier (e.g. Pro, Team)", text: $tierName)
 
-                        HStack {
-                            TextField("Amount", value: $amount, format: .number)
-                                .frame(maxWidth: 100)
+                            HStack {
+                                TextField("Amount", value: $amount, format: .number)
+                                    .frame(maxWidth: 100)
 
-                            Picker("Currency", selection: $currency) {
-                                ForEach(["USD", "EUR", "GBP", "SEK", "CAD", "AUD"], id: \.self) { curr in
-                                    Text(curr).tag(curr)
+                                Picker("Currency", selection: $currency) {
+                                    ForEach(["USD", "EUR", "GBP", "SEK", "CAD", "AUD"], id: \.self) { curr in
+                                        Text(curr).tag(curr)
+                                    }
                                 }
-                            }
-                            .frame(width: 85)
+                                .frame(width: 85)
 
-                            Picker("Cycle", selection: $billingCycle) {
-                                ForEach(BillingCycle.allCases) { c in
-                                    Text(c.rawValue).tag(c)
+                                Picker("Cycle", selection: $billingCycle) {
+                                    ForEach(BillingCycle.allCases) { c in
+                                        Text(c.rawValue).tag(c)
+                                    }
                                 }
                             }
                         }
@@ -102,14 +155,14 @@ public struct NewServiceSheet: View {
                 }
             }
             .inventoryForm()
-            .navigationTitle("New Service")
+            .navigationTitle("Add Service")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add Service") {
+                    Button("Add") {
                         saveNewService()
                         dismiss()
                     }
@@ -127,7 +180,7 @@ public struct NewServiceSheet: View {
                 }
             }
         }
-        .frame(minWidth: 480, minHeight: 520)
+        .frame(minWidth: 520, minHeight: 580)
     }
 
     private func saveNewService() {
@@ -144,11 +197,11 @@ public struct NewServiceSheet: View {
         )
 
         let billing = BillingInfo(
-            isPaid: isPaid,
+            isPaid: isPaid && category.isBillingRelevant,
             tierName: isPaid ? tierName : nil,
             amount: isPaid && amount > 0 ? amount : nil,
             currency: currency,
-            billingCycle: isPaid ? billingCycle : .free
+            billingCycle: isPaid && category.isBillingRelevant ? billingCycle : .free
         )
 
         let service = ServiceItem(
@@ -158,6 +211,10 @@ public struct NewServiceSheet: View {
             category: category,
             workspace: workspace,
             status: status,
+            signupDate: hasSignupDate ? signupDate : nil,
+            signupSource: signupSource,
+            usageFrequency: usageFrequency,
+            appPlatforms: selectedPlatforms,
             authInfo: auth,
             billingInfo: billing
         )
@@ -165,3 +222,29 @@ public struct NewServiceSheet: View {
         viewModel.createService(service)
     }
 }
+
+// MARK: - Platform Chip Label (extracted for type-checker performance)
+
+private struct PlatformChipLabel: View {
+    let platform: AppPlatform
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: platform.sfSymbol).font(.system(size: 10))
+            Text(platform.rawValue).font(.system(size: 11))
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 5)
+        .background(
+            isSelected ? Color.accentColor.opacity(0.18) : Color.secondary.opacity(0.08),
+            in: RoundedRectangle(cornerRadius: 8)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isSelected ? Color.accentColor.opacity(0.5) : Color.clear, lineWidth: 1)
+        )
+        .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+    }
+}
+

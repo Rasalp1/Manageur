@@ -34,23 +34,44 @@ public struct ServiceRowView: View {
                             .foregroundColor(.secondary)
                             .lineLimit(1)
                     }
-
                 }
-                Text(service.category.rawValue)
-                    .font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+
+                HStack(spacing: 5) {
+                    Text(service.category.rawValue)
+                        .font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+
+                    // Platform icons (up to 3 shown inline)
+                    if !service.appPlatforms.isEmpty {
+                        Text("·").font(.system(size: 10)).foregroundStyle(.secondary)
+                        ForEach(service.appPlatforms.prefix(3)) { platform in
+                            Image(systemName: platform.sfSymbol)
+                                .font(.system(size: 9))
+                                .foregroundStyle(.secondary)
+                                .help(platform.rawValue)
+                        }
+                        if service.appPlatforms.count > 3 {
+                            Text("+\(service.appPlatforms.count - 3)")
+                                .font(.system(size: 9))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
             }
 
             Spacer(minLength: 6)
 
             VStack(alignment: .trailing, spacing: 3) {
-                if service.billingInfo.isPaid {
+                // Cost or usage frequency indicator
+                if service.category.isBillingRelevant && service.billingInfo.isPaid {
                     Text(service.billingInfo.formattedCost)
                         .font(.caption.weight(.semibold))
                         .foregroundColor(.primary)
                 } else {
-                    Text("Free")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    // Usage frequency badge instead of cost
+                    Image(systemName: service.usageFrequency.sfSymbol)
+                        .font(.system(size: 10))
+                        .foregroundStyle(service.usageFrequency.color)
+                        .help("Usage: \(service.usageFrequency.rawValue)")
                 }
 
                 HStack(spacing: 4) {
@@ -70,6 +91,6 @@ public struct ServiceRowView: View {
         }
         .padding(.vertical, 10)
         .accessibilityElement(children: .combine)
-        .accessibilityValue(service.status.rawValue)
+        .accessibilityValue("\(service.status.rawValue), \(service.usageFrequency.rawValue)")
     }
 }
