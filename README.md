@@ -164,18 +164,18 @@ Your services are organized in an intuitive file system hierarchy:
 ```
 ~/Documents/Manageur/
 ├── Personal/
-│   ├── openai.json
-│   ├── spotify.json
-│   └── protonmail.json
+│   ├── example-email.json
+│   ├── example-streaming.json
+│   └── example-mail-provider.json
 ├── Work/
-│   ├── aws.json
-│   ├── github.json
-│   ├── datadog.json
-│   └── figma.json
+│   ├── example-cloud.json
+│   ├── example-vcs.json
+│   ├── example-monitoring.json
+│   └── example-design-tool.json
 └── Side Projects/
-    ├── supabase.json
-    ├── stripe.json
-    └── vercel.json
+    ├── example-database.json
+    ├── example-payments.json
+    └── example-hosting.json
 ```
 
 ### Version Controlling Your Inventory with Git
