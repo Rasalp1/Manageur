@@ -375,4 +375,4 @@ swift test
 
 ## 📄 License
 
-Manageur is proprietary software developed by Open Source Contributors. All rights reserved.
+Manageur is open-source software released under the [MIT License](LICENSE).
