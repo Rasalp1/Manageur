@@ -1,6 +1,6 @@
 import SwiftUI
 
-// Semantic surfaces and proportions follow the Skiller design system.
+// Semantic surfaces and proportions follow the shared design system.
 enum Theme {
     static let accent = Color(red: 0.22, green: 0.43, blue: 0.86)
     static let canvas = Color(nsColor: .textBackgroundColor)

@@ -7,7 +7,7 @@
 [![Architecture: MVVM](https://img.shields.io/badge/Architecture-MVVM-6842FF?style=for-the-badge)](https://developer.apple.com/documentation/swiftui)
 [![Storage: Plain JSON](https://img.shields.io/badge/Storage-Plain%20JSON-00B4D8?style=for-the-badge&logo=json&logoColor=white)](https://www.json.org)
 [![Security: Offline First](https://img.shields.io/badge/Privacy-Offline--First-2A9D8F?style=for-the-badge&logo=shield&logoColor=white)](https://github.com/Rasalp1/Manageur)
-[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 <br/>
 
