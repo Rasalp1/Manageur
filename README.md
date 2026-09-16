@@ -44,7 +44,7 @@
 
 Modern developers, creators, and knowledge workers manage dozens (or hundreds) of digital services: hosting platforms, AI model APIs, cloud databases, analytics suites, design tools, and productivity subscriptions. Over time, this leads to **SaaS sprawl**, unmonitored recurring expenses, abandoned accounts containing sensitive personal data, and security vulnerabilities like missing two-factor authentication (2FA).
 
-**Manageur** solves this by providing a unified, privacy-respecting, native macOS command center. Unlike SaaS inventory tools that demand read access to your email or bank credentials, Manageur is **100% offline-first and local-first**. Every record is stored directly on your disk as formatted `.json` files, organized cleanly by workspace, and watched in real time for external changes or Git syncs.
+**Manageur** solves this by providing a unified, privacy-respecting, native macOS command center. Unlike SaaS inventory tools that demand read access to your email or bank credentials, Manageur is **local-first**: every record is stored directly on your disk as formatted `.json` files, organized cleanly by workspace, and watched in real time for external changes or Git syncs. When a favicon is not already cached, it may request that service domain from Google or DuckDuckGo to retrieve an icon; no credentials or inventory fields are sent.
 
 ---
 
@@ -52,7 +52,7 @@ Modern developers, creators, and knowledge workers manage dozens (or hundreds) o
 
 | Challenge | Traditional SaaS Trackers | Manageur Solution |
 | :--- | :--- | :--- |
-| **Privacy & Sovereignty** | Require third-party cloud hosting, OAuth scraping of emails or bank accounts. | **100% Local-First**. Your data never leaves your Mac unless you choose to sync via your own private Git repository. |
+| **Privacy & Sovereignty** | Require third-party cloud hosting, OAuth scraping of emails or bank accounts. | **Local-first**. Records remain on your Mac; optional favicon lookup sends only the service domain to Google or DuckDuckGo when no cached icon exists. |
 | **Data Format** | Proprietary databases or vendor-locked binary formats. | **Human-Readable JSON**. Open in VS Code, Vim, or automate with `jq` and shell scripts. |
 | **Security Auditing** | Superficial cost summaries without auth or privacy context. | **Proactive Security Audits**: detects missing 2FA, forgotten trials, and unrecorded GDPR/deletion links. |
 | **macOS Native Feel** | Sluggish Electron or web wrappers with non-native UX. | **100% Swift & SwiftUI**. Native 3-column split view, unified toolbar, keyboard shortcuts, and silky smooth performance. |
