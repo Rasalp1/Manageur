@@ -59,10 +59,10 @@ struct ManageurApp: App {
                 currency: "USD",
                 billingCycle: .monthly,
                 nextRenewalDate: Calendar.current.date(byAdding: .day, value: 24, to: Date()),
-                paymentMethodDescription: "Company Mastercard *8812"
+                paymentMethodDescription: "Example Company Card ending in 0000"
             ),
             contextInfo: ContextInfo(
-                linkedProjects: ["Manageur", "Infrastructure", "Personal-Blog"],
+                linkedProjects: ["Example Service Catalog", "Example Infrastructure", "Example Website"],
                 dependencies: ["GitHub Actions", "OAuth App for Auth"],
                 primaryOwner: "Lead Dev"
             ),
@@ -87,9 +87,9 @@ struct ManageurApp: App {
             status: .trial,
             authInfo: AuthenticationInfo(
                 provider: .google,
-                loginEmailOrUsername: "user@gmail.com",
+                loginEmailOrUsername: "user@example.com",
                 twoFactorMethod: .authenticatorApp,
-                recoveryEmail: "recovery@gmail.com"
+                recoveryEmail: "backup@example.com"
             ),
             billingInfo: BillingInfo(
                 isPaid: true,
@@ -98,10 +98,10 @@ struct ManageurApp: App {
                 currency: "USD",
                 billingCycle: .payAsYouGo,
                 nextRenewalDate: Calendar.current.date(byAdding: .day, value: 5, to: Date()),
-                paymentMethodDescription: "Personal Visa *4242"
+                paymentMethodDescription: "Example Personal Card ending in 0000"
             ),
             contextInfo: ContextInfo(
-                linkedProjects: ["Manageur", "Agent-Experiments"],
+                linkedProjects: ["Example Service Catalog", "Example Automation"],
                 dependencies: ["OpenAI API key in .env"]
             ),
             privacyInfo: PrivacyInfo(

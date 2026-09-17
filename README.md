@@ -218,10 +218,10 @@ Each service file contains complete configuration and context. Here is an annota
   "lastAudited": "2026-09-06T18:00:00Z",
   "authInfo": {
     "provider": "GitHub",
-    "loginEmailOrUsername": "octocat@company.internal",
+    "loginEmailOrUsername": "user@example.com",
     "twoFactorMethod": "Hardware Key (YubiKey / FIDO2)",
-    "recoveryEmail": "security-ops@company.internal",
-    "ssoDomain": "company.okta.com"
+    "recoveryEmail": "backup@example.com",
+    "ssoDomain": "example.okta.com"
   },
   "billingInfo": {
     "isPaid": true,
@@ -230,14 +230,14 @@ Each service file contains complete configuration and context. Here is an annota
     "currency": "USD",
     "billingCycle": "Monthly",
     "nextRenewalDate": "2026-10-01T00:00:00Z",
-    "paymentMethodDescription": "Corporate Amex ending in 4019",
+    "paymentMethodDescription": "Example Company Card ending in 0000",
     "cancellationUrl": "https://github.com/organizations/company/settings/billing"
   },
   "contextInfo": {
     "linkedProjects": [
-      "Manageur",
-      "API-Gateway",
-      "Core-Infrastructure"
+      "Example Service Catalog",
+      "Example API",
+      "Example Infrastructure"
     ],
     "dependencies": [
       "GitHub Actions Runners",
