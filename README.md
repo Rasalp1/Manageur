@@ -231,7 +231,7 @@ Each service file contains complete configuration and context. Here is an annota
     "billingCycle": "Monthly",
     "nextRenewalDate": "2026-10-01T00:00:00Z",
     "paymentMethodDescription": "Example Company Card ending in 0000",
-    "cancellationUrl": "https://github.com/organizations/company/settings/billing"
+    "cancellationUrl": "https://example.com/account/billing"
   },
   "contextInfo": {
     "linkedProjects": [
