@@ -260,9 +260,7 @@ public struct ServiceDetailView: View {
 
     private func revealInFinder() {
         guard let s = draftService else { return }
-        let url = ServiceStorageManager.shared.rootDirectory
-            .appendingPathComponent(s.workspace)
-            .appendingPathComponent("\(s.slug).json")
+        guard let url = ServiceStorageManager.shared.fileURL(for: s) else { return }
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 }

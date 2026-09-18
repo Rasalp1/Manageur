@@ -61,6 +61,13 @@ final class ManageurTests: XCTestCase {
         XCTAssertEqual(ServiceItem.generateSlug(from: "  Vercel.com  "), "vercel-com")
     }
 
+    func testStoragePathComponentsRejectTraversal() {
+        XCTAssertTrue(ServiceStorageManager.isSafePathComponent("Side Projects"))
+        XCTAssertFalse(ServiceStorageManager.isSafePathComponent("../outside"))
+        XCTAssertFalse(ServiceStorageManager.isSafePathComponent("nested/name"))
+        XCTAssertFalse(ServiceStorageManager.isSafePathComponent(".."))
+    }
+
     @MainActor
     func testAuditWarningsEngine() throws {
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)

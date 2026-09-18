@@ -17,9 +17,18 @@ public final class LogoCacheManager: @unchecked Sendable {
         try? fileManager.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
     }
 
+    private static func normalizedDomain(_ value: String) -> String? {
+        let candidate = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !candidate.isEmpty, candidate.count <= 253 else { return nil }
+        let label = #"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?"#
+        guard candidate.range(of: "^(?:\(label)\\.)*\(label)$", options: .regularExpression) != nil else {
+            return nil
+        }
+        return candidate
+    }
+
     public func getLogo(for domain: String) async -> NSImage? {
-        let clean = domain.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !clean.isEmpty else { return nil }
+        guard let clean = Self.normalizedDomain(domain) else { return nil }
 
         // 1. Check memory cache
         if let cached = memoryCache.object(forKey: clean as NSString) {
@@ -34,8 +43,13 @@ public final class LogoCacheManager: @unchecked Sendable {
         }
 
         // 3. Fetch from remote endpoints
+        var googleComponents = URLComponents(string: "https://www.google.com/s2/favicons")
+        googleComponents?.queryItems = [
+            URLQueryItem(name: "domain", value: clean),
+            URLQueryItem(name: "sz", value: "128")
+        ]
         let candidateURLs = [
-            URL(string: "https://www.google.com/s2/favicons?domain=\(clean)&sz=128"),
+            googleComponents?.url,
             URL(string: "https://icons.duckduckgo.com/ip3/\(clean).ico")
         ].compactMap { $0 }
 

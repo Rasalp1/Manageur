@@ -1,6 +1,20 @@
 import Foundation
 import Combine
 
+public enum ServiceStorageError: LocalizedError, Sendable {
+    case invalidPathComponent(String)
+    case storageRootUnavailable(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidPathComponent(let value):
+            return "Invalid storage path component: \(value)"
+        case .storageRootUnavailable(let path):
+            return "Storage root is unavailable: \(path)"
+        }
+    }
+}
+
 public final class ServiceStorageManager: ObservableObject, @unchecked Sendable {
     public static let shared = ServiceStorageManager()
 
@@ -35,6 +49,29 @@ public final class ServiceStorageManager: ObservableObject, @unchecked Sendable 
         UserDefaults.standard.set(newURL.path, forKey: userDefaultsKey)
         ensureDefaultWorkspacesExist()
         startWatchingDirectory()
+    }
+
+    public static func isSafePathComponent(_ value: String) -> Bool {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != ".", trimmed != ".." else { return false }
+        return !trimmed.contains { character in
+            character == "/" || character == "\\" || character.isNewline ||
+                character.unicodeScalars.contains { $0.value < 0x20 || $0.value == 0x7F }
+        }
+    }
+
+    private static func validatedPathComponent(_ value: String) throws -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isSafePathComponent(trimmed) else {
+            throw ServiceStorageError.invalidPathComponent(value)
+        }
+        return trimmed
+    }
+
+    private func pathIsInsideRoot(_ candidate: URL) -> Bool {
+        let root = rootDirectory.standardizedFileURL.resolvingSymlinksInPath()
+        let target = candidate.standardizedFileURL.resolvingSymlinksInPath()
+        return target.path == root.path || target.path.hasPrefix(root.path + "/")
     }
 
     private func ensureDefaultWorkspacesExist() {
@@ -101,26 +138,40 @@ public final class ServiceStorageManager: ObservableObject, @unchecked Sendable 
     }
 
     public func save(service: ServiceItem, oldWorkspace: String? = nil, oldSlug: String? = nil) throws {
-        let currentWorkspace = service.workspace.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Personal" : service.workspace
+        let requestedWorkspace = service.workspace.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Personal" : service.workspace
+        let currentWorkspace = try Self.validatedPathComponent(requestedWorkspace)
         let wsDir = rootDirectory.appendingPathComponent(currentWorkspace, isDirectory: true)
+        guard pathIsInsideRoot(wsDir) else {
+            throw ServiceStorageError.storageRootUnavailable(wsDir.path)
+        }
 
         if !fileManager.fileExists(atPath: wsDir.path) {
             try fileManager.createDirectory(at: wsDir, withIntermediateDirectories: true)
         }
 
-        let newSlug = service.slug.isEmpty ? ServiceItem.generateSlug(from: service.name) : service.slug
+        let newSlug = try Self.validatedPathComponent(
+            service.slug.isEmpty ? ServiceItem.generateSlug(from: service.name) : service.slug
+        )
         var updatedService = service
         updatedService.slug = newSlug
         updatedService.workspace = currentWorkspace
 
         let targetFileURL = wsDir.appendingPathComponent("\(newSlug).json")
+        guard pathIsInsideRoot(targetFileURL) else {
+            throw ServiceStorageError.storageRootUnavailable(targetFileURL.path)
+        }
 
         // If workspace or slug changed, remove the old file
         if let oldWs = oldWorkspace, let oldS = oldSlug, (!oldWs.isEmpty && !oldS.isEmpty) {
             if oldWs != currentWorkspace || oldS != newSlug {
-                let oldFileURL = rootDirectory.appendingPathComponent(oldWs).appendingPathComponent("\(oldS).json")
+                let safeOldWorkspace = try Self.validatedPathComponent(oldWs)
+                let safeOldSlug = try Self.validatedPathComponent(oldS)
+                let oldFileURL = rootDirectory.appendingPathComponent(safeOldWorkspace).appendingPathComponent("\(safeOldSlug).json")
+                guard pathIsInsideRoot(oldFileURL) else {
+                    throw ServiceStorageError.storageRootUnavailable(oldFileURL.path)
+                }
                 if fileManager.fileExists(atPath: oldFileURL.path) {
-                    try? fileManager.removeItem(at: oldFileURL)
+                    try fileManager.removeItem(at: oldFileURL)
                 }
             }
         }
@@ -130,11 +181,27 @@ public final class ServiceStorageManager: ObservableObject, @unchecked Sendable 
     }
 
     public func delete(service: ServiceItem) throws {
-        let ws = service.workspace.isEmpty ? "Personal" : service.workspace
-        let fileURL = rootDirectory.appendingPathComponent(ws).appendingPathComponent("\(service.slug).json")
+        let ws = try Self.validatedPathComponent(service.workspace.isEmpty ? "Personal" : service.workspace)
+        let slug = try Self.validatedPathComponent(service.slug)
+        let fileURL = rootDirectory.appendingPathComponent(ws).appendingPathComponent("\(slug).json")
+        guard pathIsInsideRoot(fileURL) else {
+            throw ServiceStorageError.storageRootUnavailable(fileURL.path)
+        }
         if fileManager.fileExists(atPath: fileURL.path) {
             try fileManager.removeItem(at: fileURL)
         }
+    }
+
+    /// Returns a service file URL only when both path components remain inside
+    /// the configured storage root. This is also used by UI actions that reveal
+    /// a record in Finder, so imported JSON cannot turn into an arbitrary path.
+    public func fileURL(for service: ServiceItem) -> URL? {
+        guard let workspace = try? Self.validatedPathComponent(service.workspace.isEmpty ? "Personal" : service.workspace),
+              let slug = try? Self.validatedPathComponent(service.slug) else {
+            return nil
+        }
+        let url = rootDirectory.appendingPathComponent(workspace).appendingPathComponent("\(slug).json")
+        return pathIsInsideRoot(url) ? url : nil
     }
 
     public func listWorkspaces() -> [String] {

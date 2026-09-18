@@ -186,7 +186,7 @@ public final class InventoryViewModel: ObservableObject {
 
     public func addWorkspace(_ name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        guard ServiceStorageManager.isSafePathComponent(trimmed) else { return }
         let wsDir = storage.rootDirectory.appendingPathComponent(trimmed, isDirectory: true)
         try? FileManager.default.createDirectory(at: wsDir, withIntermediateDirectories: true)
         self.availableWorkspaces = storage.listWorkspaces()
